@@ -1,3 +1,4 @@
+#include "clang_helper.h"
 #include <linux/cdev.h>
 #include <linux/fs.h>
 #include <linux/module.h>

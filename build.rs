@@ -102,9 +102,15 @@ fn handle_kernel_symbols_cfg(symvers_path: &PathBuf) {
     }
 }
 
-fn add_env_if_present(cmd: &mut Command, var: &str) {
-    if let Ok(val) = env::var(var) {
-        cmd.env(var, val);
+trait CommandExt {
+    fn env_if_present(&mut self, var: &str);
+}
+
+impl CommandExt for Command {
+    fn env_if_present(&mut self, var: &str) {
+        if let Ok(val) = env::var(var) {
+            self.env(var, val);
+        }
     }
 }
 
@@ -119,14 +125,13 @@ fn main() {
 
     println!("cargo:rerun-if-env-changed=CLANG");
     println!("cargo:rerun-if-changed=kernel-cflags-finder/Makefile");
-    let mut cmd = Command::new("make");
-    cmd.arg("-C")
-        .arg("kernel-cflags-finder")
-        .arg("-s")
+    let mut cmd = Command::new("sh");
+    cmd.arg("-c")
+        .arg("make -C kernel-cflags-finder -s | tr ' ' '\\n' | grep -v -i 'structleak' | tr '\\n' ' '")
         .env_clear();
-    add_env_if_present(&mut cmd, "KDIR");
-    add_env_if_present(&mut cmd, "CLANG");
-    add_env_if_present(&mut cmd, "PATH");
+    cmd.env_if_present("KDIR");
+    cmd.env_if_present("CLANG");
+    cmd.env_if_present("PATH");
     let output = cmd.output().unwrap();
     if !output.status.success() {
         eprintln!("kernel-cflags-finder did not succeed");
@@ -134,6 +139,8 @@ fn main() {
         eprintln!("stderr: {}", std::str::from_utf8(&output.stderr).unwrap());
         std::process::exit(1);
     }
+
+    println!("kernel-cflags-finder: {}", std::str::from_utf8(&output.stdout).unwrap());
 
     let target = env::var("TARGET").unwrap();
 

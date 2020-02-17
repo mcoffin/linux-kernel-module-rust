@@ -1,3 +1,4 @@
+#include "clang_helper.h"
 #include <linux/bug.h>
 #include <linux/printk.h>
 #include <linux/uaccess.h>

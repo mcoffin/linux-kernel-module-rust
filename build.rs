@@ -147,6 +147,7 @@ fn main() {
     let mut builder = bindgen::Builder::default()
         .use_core()
         .ctypes_prefix("c_types")
+        .size_t_is_usize(true)
         .derive_default(true)
         .rustfmt_bindings(true);
 
@@ -188,5 +189,6 @@ fn main() {
     for arg in shlex::split(std::str::from_utf8(&output.stdout).unwrap()).unwrap() {
         builder.flag(&arg);
     }
+    builder.flag("-mfentry");
     builder.compile("helpers");
 }
